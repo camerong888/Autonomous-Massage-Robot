@@ -133,6 +133,12 @@ Safety Features
 In case of emergency, use the "Emergency Stop" button to immediately halt all operations.
 The system includes collision detection and will stop if an unexpected obstacle is detected.
 
+### Deactiviating Virtual Enviornment
+
+```
+deactivate
+```
+
 ## Project Structure
 
 ```
