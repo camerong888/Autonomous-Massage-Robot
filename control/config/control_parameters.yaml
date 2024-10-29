@@ -1,0 +1,11 @@
+# control_parameters.yaml
+
+impedance_controller:
+  stiffness: 1.0
+  damping: 0.5
+
+arm_controller:
+  robot_name: "my_gen3"
+  reference_frame: "base_link"
+  min_duration: 2.0  # seconds
+  max_duration: 5.0  # seconds
