@@ -5,9 +5,11 @@
     <rosparam file="$(find control)/config/control_parameters.yaml" command="load"/>
 
     <!-- Launch the kortex_driver -->
-    <include file="$(find kortex_driver)/launch/kortex_driver.launch">
-        <arg name="ip_address" value="192.168.1.10"/>
+    <include file="src/ros_kortex/launch/kortex_driver.launch">
+        <arg name="ip_address" value="10.75.13.13"/>
         <arg name="robot_name" value="my_gen3"/>
+        <arg name="username" value="admin"/>
+        <arg name="password" value="admin"/>
     </include>
 
     <!-- Launch the arm_controller node -->

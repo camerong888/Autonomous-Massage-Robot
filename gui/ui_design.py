@@ -33,11 +33,13 @@ class Ui_MainWindow(object):
         self.checkBox_shoulders = QtWidgets.QCheckBox("Shoulders")
         self.checkBox_back = QtWidgets.QCheckBox("Back")
         self.checkBox_legs = QtWidgets.QCheckBox("Legs")
+        self.checkBox_arms = QtWidgets.QCheckBox("Arms")
 
         self.verticalLayout_muscle.addWidget(self.checkBox_neck)
         self.verticalLayout_muscle.addWidget(self.checkBox_shoulders)
         self.verticalLayout_muscle.addWidget(self.checkBox_back)
         self.verticalLayout_muscle.addWidget(self.checkBox_legs)
+        self.verticalLayout_muscle.addWidget(self.checkBox_arms)
 
         self.verticalLayout.addWidget(self.groupBox_muscle)
 
