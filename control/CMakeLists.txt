@@ -130,7 +130,7 @@ catkin_install_python(PROGRAMS src/example_move_it_trajectories.py
                       DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 ## Declare a C++ library
-# add_library(${PROJECT_NAME}
+# add_library(${PROJECT_NAME}t  
 #   src/${PROJECT_NAME}/control.cpp
 # )
 
