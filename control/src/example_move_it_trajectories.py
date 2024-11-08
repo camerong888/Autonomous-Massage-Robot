@@ -100,34 +100,36 @@ class ExampleMoveItTrajectories(object):
     # Execute the trajectory and block while it's not finished
     return arm_group.execute(trajectory_message, wait=True)
 
-  def reach_joint_angles(self, tolerance):
+  def reach_joint_angles(self, tolerance, joint_positions = []):
     arm_group = self.arm_group
     success = True
 
-    # Get the current joint positions
-    joint_positions = arm_group.get_current_joint_values()
     rospy.loginfo("Printing current joint positions before movement :")
-    for p in joint_positions: rospy.loginfo(p)
+    for p in arm_group.get_current_joint_values(): rospy.loginfo(p)
 
     # Set the goal joint tolerance
     self.arm_group.set_goal_joint_tolerance(tolerance)
 
     # Set the joint target configuration
-    if self.degrees_of_freedom == 7:
-      joint_positions[0] = pi/2
-      joint_positions[1] = 0
-      joint_positions[2] = pi/4
-      joint_positions[3] = -pi/4
-      joint_positions[4] = 0
-      joint_positions[5] = pi/2
-      joint_positions[6] = 0.2
-    elif self.degrees_of_freedom == 6:
-      joint_positions[0] = 0
-      joint_positions[1] = 0
-      joint_positions[2] = pi/2
-      joint_positions[3] = pi/4
-      joint_positions[4] = 0
-      joint_positions[5] = pi/2
+    print(joint_positions)
+    if joint_positions == []:
+      if self.degrees_of_freedom == 7:
+        joint_positions[0] = pi/2
+        joint_positions[1] = 0
+        joint_positions[2] = pi/4
+        joint_positions[3] = -pi/4
+        joint_positions[4] = 0
+        joint_positions[5] = pi/2
+        joint_positions[6] = 0.2
+      elif self.degrees_of_freedom == 6:
+        joint_positions[0] = 0
+        joint_positions[1] = 0
+        joint_positions[2] = pi/2
+        joint_positions[3] = pi/4
+        joint_positions[4] = 0
+        joint_positions[5] = pi/2
+
+    print(joint_positions)
     arm_group.set_joint_value_target(joint_positions)
     
     # Plan and execute in one command
@@ -194,15 +196,13 @@ def main():
   #   success &= example.reach_named_position("vertical")
   #   print (success)
   
+  look_at_floor_joints = [-0.0631803010882233, -0.0745903484431576, 3.0829359979485798, -1.5383015004381857, 0.008128911196573671, -1.65753228770547, 1.3637872173663834]
+  look_at_floor_joints = [0, 0, pi, -pi/2, 0, -pi/2, pi/2]
   if success:
     rospy.loginfo("Reaching Joint Angles...")  
-    success &= example.reach_joint_angles(tolerance=0.01) #rad
+    success &= example.reach_joint_angles(tolerance=0.01, joint_positions=look_at_floor_joints) #rad
     print (success)
   
-  if success:
-    rospy.loginfo("Reaching Named Target Home...")
-    success &= example.reach_named_position("home")
-    print (success)
 
   if success:
     rospy.loginfo("Reaching Cartesian Pose...")
@@ -211,6 +211,8 @@ def main():
     actual_pose.position.z -= 0.2
     success &= example.reach_cartesian_pose(pose=actual_pose, tolerance=0.01, constraints=None)
     print (success)
+
+  return
     
   if example.degrees_of_freedom == 7 and success:
     rospy.loginfo("Reach Cartesian Pose with constraints...")

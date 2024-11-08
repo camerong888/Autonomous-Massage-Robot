@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   kortex_driver
   rospy
   std_msgs
+  sensor_msgs
 )
 
 catkin_package()
@@ -127,6 +128,7 @@ include_directories(
 
 
 catkin_install_python(PROGRAMS src/example_move_it_trajectories.py
+                               src/pose_detector.py
                       DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 ## Declare a C++ library
