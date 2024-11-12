@@ -13,6 +13,12 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   sensor_msgs
+  actionlib
+  trajectory_msgs
+  control_msgs
+  gen3_compliant_controllers
+  moveit_commander
+  moveit_msgs
 )
 
 catkin_package()
@@ -127,7 +133,7 @@ include_directories(
 )
 
 
-catkin_install_python(PROGRAMS src/example_move_it_trajectories.py
+catkin_install_python(PROGRAMS src/arm_controller.py
                                src/pose_detector.py
                       DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 

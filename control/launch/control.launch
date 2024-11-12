@@ -1,8 +1,8 @@
 <!-- control.launch -->
 
 <launch>
-    <!-- Load control parameters -->
-    <rosparam file="$(find control)/config/control_parameters.yaml" command="load"/>
+    <!-- Load controller parameters -->
+    <rosparam command="load" file="$(find control)/config/joint_impedance_controller.yaml"/>
 
     <!-- Launch the kortex_driver -->
     <include file="src/ros_kortex/launch/kortex_driver.launch">
@@ -12,9 +12,19 @@
         <arg name="password" value="admin"/>
     </include>
 
+    <!-- Launch the MoveIt! move_group node -->
+    <include file="$(find my_gen3_move_it_config)/launch/move_group.launch">
+        <arg name="robot_description" value="$(find kortex_description)/urdf/gen3.urdf.xacro"/>
+    </include>
+
+    <!-- Launch the controller spawner -->
+    <node name="controller_spawner" pkg="controller_manager" type="spawner" output="screen"
+          args="joint_impedance_controller">
+    </node>
+
     <!-- Launch the arm_controller node -->
     <node name="arm_controller" pkg="control" type="arm_controller.py" output="screen"/>
 
-    <!-- Launch the impedance_controller node -->
-    <node name="impedance_controller" pkg="control" type="impedance_controller.py" output="screen"/>
+    <!-- Launch the pose_detector node -->
+    <node name="pose_detector" pkg="control" type="pose_detector.py" output="screen"/>
 </launch>
