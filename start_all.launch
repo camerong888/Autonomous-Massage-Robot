@@ -2,13 +2,10 @@
 
 <launch>
     <!-- Launch the control system -->
-    <include file="$(find control)/launch/control.launch"/>
+    <include file="$control/launch/control.launch"/>
 
     <!-- Launch the machine vision processing node -->
-    <node name="pose_estimation" pkg="vision" type="pose_estimation.py" output="screen"/>
-
-    <!-- Launch the path planning node -->
-    <node name="path_planner" pkg="path_planning" type="path_planner.py" output="screen"/>
+    <node name="pose_estimation" pkg="vision" type="main.py" output="screen"/>
 
     <!-- Launch the GUI -->
     <node name="gui" pkg="gui" type="main.py" output="screen"/>
