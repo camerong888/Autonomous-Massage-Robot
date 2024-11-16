@@ -1,27 +1,43 @@
+#!/usr/bin/env python3
+
 import rospy
+import tf2_ros
+import tf2_geometry_msgs
 from apriltag_ros.msg import AprilTagDetectionArray
 
-def apriltag_kinova_callback(data):
-    if len(data.detections) > 0:
-        tag = data.detections[0]
-        kinova_x = tag.pose.pose.pose.position.x
-        kinova_y = tag.pose.pose.pose.position.y
-        kinova_z = tag.pose.pose.pose.position.z
-        rospy.loginfo(f"Kinova Camera - AprilTag position: x={kinova_x}, y={kinova_y}, z={kinova_z}")
-    else:
-        rospy.loginfo("No AprilTag detected by Kinova Camera.")
+class AprilTagHandler:
+    def __init__(self, base_frame):
+        self.base_frame = base_frame
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
-def apriltag_depth_callback(data):
-    if len(data.detections) > 0:
-        tag = data.detections[0]
-        depth_x = tag.pose.pose.pose.position.x
-        depth_y = tag.pose.pose.pose.position.y
-        depth_z = tag.pose.pose.pose.position.z
-        rospy.loginfo(f"Depth Camera - AprilTag position: x={depth_x}, y={depth_y}, z={depth_z}")
-    else:
-        rospy.loginfo("No AprilTag detected by Depth Camera.")
+        rospy.Subscriber('/tag_detections_kinova', AprilTagDetectionArray, self.kinova_callback)
+        rospy.Subscriber('/tag_detections_depth', AprilTagDetectionArray, self.depth_callback)
 
-rospy.init_node('apriltag_matcher', anonymous=True)
-rospy.Subscriber('/tag_detections_kinova', AprilTagDetectionArray, apriltag_kinova_callback)
-rospy.Subscriber('/tag_detections_depth', AprilTagDetectionArray, apriltag_depth_callback)
-rospy.spin()
+    def kinova_callback(self, data):
+        if len(data.detections) > 0:
+            tag = data.detections[0]
+            x, y, z = tag.pose.pose.pose.position.x, tag.pose.pose.pose.position.y, tag.pose.pose.pose.position.z
+            self.transform_to_base_frame(x, y, z, 'kinova_camera_frame')
+
+    def depth_callback(self, data):
+        if len(data.detections) > 0:
+            tag = data.detections[0]
+            x, y, z = tag.pose.pose.pose.position.x, tag.pose.pose.pose.position.y, tag.pose.pose.pose.position.z
+            self.transform_to_base_frame(x, y, z, 'depth_camera_frame')
+
+    def transform_to_base_frame(self, x, y, z, source_frame):
+        try:
+            transform = self.tf_buffer.lookup_transform(self.base_frame, source_frame, rospy.Time(0))
+            pose = tf2_geometry_msgs.PoseStamped()
+            pose.pose.position.x = x
+            pose.pose.position.y = y
+            pose.pose.position.z = z
+            pose.pose.orientation.w = 1.0
+
+            transformed_pose = tf2_geometry_msgs.do_transform_pose(pose, transform)
+            rospy.loginfo(f"Transformed AprilTag position: x={transformed_pose.pose.position.x}, "
+                          f"y={transformed_pose.pose.position.y}, z={transformed_pose.pose.position.z}")
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            rospy.logwarn("Transform lookup failed.")
+

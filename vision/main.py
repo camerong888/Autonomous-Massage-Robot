@@ -11,8 +11,16 @@ from visualization_msgs.msg import Marker
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 
+#integrate apriltag
+from apriltag import AprilTagHandler
+
+
 # Initialize ROS node
-rospy.init_node('pose_publisher')
+rospy.init_node('pose_and_apriltag_estimator')
+
+# Initialize AprilTag handler
+base_frame = 'base_frame'
+apriltag_handler = AprilTagHandler(base_frame)
 
 # Publishers for image, markers, and poses
 image_pub = rospy.Publisher('/camera/color/image_raw', Image, queue_size=10)
