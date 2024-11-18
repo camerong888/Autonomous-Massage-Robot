@@ -1,30 +1,21 @@
-<!-- control.launch -->
+<!-- test_controller.launch -->
 
 <launch>
     <!-- Load controller parameters -->
-    <rosparam command="load" file="$(find control)/config/joint_impedance_controller.yaml"/>
+    <rosparam command="load" file="$(find gen3_compliant_controllers)/config/gen3_7dof_compliant_controllers.yaml"/>
 
-    <!-- Launch the kortex_driver -->
-    <include file="src/ros_kortex/launch/kortex_driver.launch">
-        <arg name="ip_address" value="10.75.13.13"/>
-        <arg name="robot_name" value="my_gen3"/>
-        <arg name="username" value="admin"/>
-        <arg name="password" value="admin"/>
-    </include>
-
-    <!-- Launch the MoveIt! move_group node -->
-    <include file="$(find my_gen3_move_it_config)/launch/move_group.launch">
-        <arg name="robot_description" value="$(find kortex_description)/urdf/gen3.urdf.xacro"/>
-    </include>
-
-    <!-- Launch the controller spawner -->
-    <node name="controller_spawner" pkg="controller_manager" type="spawner" output="screen"
-          args="joint_impedance_controller">
+    <!-- Start the controller manager -->
+    <node name="controller_manager" pkg="controller_manager" type="controller_manager" respawn="false" output="screen">
+        <rosparam command="load" file="$(find gen3_compliant_controllers)/config/gen3_7dof_compliant_controllers.yaml"/>
     </node>
 
-    <!-- Launch the arm_controller node -->
-    <node name="arm_controller" pkg="control" type="arm_controller.py" output="screen"/>
+    <!-- Start the task space compliant controller -->
+    <node name="controller_spawner" pkg="controller_manager" type="spawner" args="task_space_compliant_controller" output="screen" />
 
-    <!-- Launch the pose_detector node -->
-    <node name="pose_detector" pkg="control" type="pose_detector.py" output="screen"/>
+    <!-- Start MoveIt! move_group node -->
+    <include file="$(find your_moveit_config_package)/launch/move_group.launch" />
+
+    <!-- Start your arm_controller node -->
+    <node name="arm_controller" pkg="control" type="moveit_example_with_impedance_control.py" output="screen"/>
+
 </launch>
