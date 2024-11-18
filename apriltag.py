@@ -11,6 +11,7 @@ class AprilTagHandler:
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
 
+        # Subscribe to AprilTag detections
         rospy.Subscriber('/tag_detections_kinova', AprilTagDetectionArray, self.kinova_callback)
         rospy.Subscriber('/tag_detections_depth', AprilTagDetectionArray, self.depth_callback)
 
@@ -41,3 +42,9 @@ class AprilTagHandler:
         except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
             rospy.logwarn("Transform lookup failed.")
 
+# Initialize the ROS node and AprilTagHandler
+if __name__ == "__main__":
+    rospy.init_node('apriltag_handler_node', anonymous=True)
+    base_frame = 'base_frame'
+    apriltag_handler = AprilTagHandler(base_frame)
+    rospy.spin()
