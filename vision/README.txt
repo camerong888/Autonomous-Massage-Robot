@@ -6,3 +6,8 @@ Topics
 /human_pose/camera_frame   |	      geometry_msgs/PoseArray	      |          pose_detection_node	       |                       rviz_node
 /human_pose/apriltag_frame |	      geometry_msgs/PoseArray	      |          pose_detection_node	       |                       rviz_node
 /tf	                       |             tf/tfMessage	              |      tf_broadcaster, apriltag_node     |                    	rviz_node
+
+
+
+
+$ rosrun tf tf_monitor /camera_link /apriltag_0
