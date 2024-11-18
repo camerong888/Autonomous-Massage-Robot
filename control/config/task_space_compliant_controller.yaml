@@ -1,0 +1,7 @@
+task_space_compliant_controller:
+  type: "gen3_compliant_controllers/TaskSpaceCompliantController"
+  robot_description: "/robot_description"
+  base_link: "base_link"
+  end_effector_link: "end_effector_link"
+  stiffness: [1000, 1000, 1000, 100, 100, 100]
+  damping: [10, 10, 10, 1, 1, 1]
