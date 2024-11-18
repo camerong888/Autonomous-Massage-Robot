@@ -11,17 +11,6 @@ from visualization_msgs.msg import Marker
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 
-#integrate apriltag
-from apriltag import AprilTagHandler
-
-
-# Initialize ROS node
-rospy.init_node('pose_and_apriltag_estimator')
-
-# Initialize AprilTag handler
-base_frame = 'base_frame'
-apriltag_handler = AprilTagHandler(base_frame)
-
 # Publishers for image, markers, and poses
 image_pub = rospy.Publisher('/camera/color/image_raw', Image, queue_size=10)
 pose_pub = rospy.Publisher('/pose_estimation', PoseStamped, queue_size=10)
@@ -174,6 +163,7 @@ def draw_pose_and_publish(color_image, depth_image):
     return color_image
 
 def main():
+    rospy.init_node('vision_pose_publisher', anonymous=True)
     try:
         while not rospy.is_shutdown():
             color_image, depth_image = get_aligned_frames()
