@@ -23,43 +23,72 @@ class AprilTagProcessor:
         self.static_broadcaster = tf2_ros.StaticTransformBroadcaster()
 
         # Create a timer that calls the callback function every second
-        self.get_transforms()
-        self.timer = rospy.Timer(rospy.Duration(1.0), self.timer_callback)
-
-    def get_transforms(self):
-        self.base_link_to_realsense_tf = self.tf_buffer.lookup_transform('base_link', 'realsense_link', rospy.Time(0))
-
+        self.timer = rospy.Timer(rospy.Duration(0.1), self.timer_callback)
+    
+    
     def timer_callback(self, event):
-        """
-        Timer callback function to align AprilTag frames and broadcast Realsense Depth Camera transform
-        """
-        self.base_link_to_realsense_tf.header.stamp = rospy.Time.now()
-        self.broadcaster.sendTransform(self.base_link_to_realsense_tf)
-
+        self.align_apriltag_frames()
+    
 
     def align_apriltag_frames(self):
         """
         put `apriltag_arm` and `apriltag_realsense` frame aligned to 0 
         """
+        
         try:
-            # get `apriltag_arm` to `apriltag_realsense` transformation
-            transform = self.tf_buffer.lookup_transform(
-                "apriltag_realsense", "apriltag_arm", rospy.Time(0)
+            # # get `apriltag_arm` to `apriltag_realsense` transformation
+            # transform = self.tf_buffer.lookup_transform(
+            #     "apriltag_realsense", "apriltag_arm", rospy.Time(0)
+            # )
+
+            # # publish the static transformation and align both to (0, 0, 0)
+            # self.broadcast_static_transform(
+            #     parent_frame="apriltag_realsense",
+            #     child_frame="aligned_apriltag_frame",
+            #     translation=[0.0, 0.0, 0.0],
+            #     rotation=[0.0, 0.0, 0.0, 1.0]  # unit quaternion    
+    
+        
+            transform_to_arm = self.tf_buffer.lookup_transform("apriltag_realsense_0", "realsense_link", rospy.Time(0))
+            self.broadcast_static_transform(
+                parent_frame="apriltag_arm_0",
+                child_frame="realsense_link",
+                translation=[
+                    transform_to_arm.transform.translation.x,
+                    transform_to_arm.transform.translation.y,
+                    transform_to_arm.transform.translation.z,
+                ],
+                rotation=[
+                    transform_to_arm.transform.rotation.x,
+                    transform_to_arm.transform.rotation.y,
+                    transform_to_arm.transform.rotation.z,
+                    transform_to_arm.transform.rotation.w,
+                ],
             )
 
-            # publish the static transformation and align both to (0, 0, 0)
-            self.broadcast_static_transform(
-                parent_frame="apriltag_realsense",
-                child_frame="aligned_apriltag_frame",
-                translation=[0.0, 0.0, 0.0],
-                rotation=[0.0, 0.0, 0.0, 1.0]  # unit quaternion
-            )
-        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
-            rospy.logwarn("Transform lookup failed for aligning AprilTag frames.")
+            # self.broadcast_static_transform(
+            #     parent_frame="apriltag_realsense_0",
+            #     child_frame="aligned_apriltag_frame",
+            #     translation=[0.0,0.0,0.0],
+            #     rotation=[0.0,0.0,0.0,1.0],
+            # )
+
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException) as e:
+            rospy.logwarn(f"Transform lookup failed for aligning AprilTag frames. {e}")
+        
+        
+        # except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+        #     rospy.logwarn("Transform lookup failed for aligning AprilTag frames.")
 
     def broadcast_realsense_depth_camera(self):
         """
         broadcast Realsense Depth Camera static transformation
+        """
+
+
+        """
+        parent_frame="apriltag_realsense_0",
+        child_frame="realsense_depth_camera",
         """
         self.broadcast_static_transform(
             parent_frame="aligned_apriltag_frame",
