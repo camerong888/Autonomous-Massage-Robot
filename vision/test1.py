@@ -8,16 +8,18 @@ import rospy
 from geometry_msgs.msg import PoseStamped, Point
 from std_msgs.msg import Header
 from cv_bridge import CvBridge
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, CameraInfo
 import tf
 from visualization_msgs.msg import Marker
+from tf import transformations as t
 
 class VisionPoseAprilTag:
     def __init__(self):
         rospy.init_node('vision_pose_apriltag', anonymous=True)
-        self.image_pub = rospy.Publisher('/camera/color/image_raw', Image, queue_size=10)
+        self.image_pub = rospy.Publisher('/realsense/color/image_raw', Image, queue_size=10)
         self.pose_pub = rospy.Publisher('/pose_estimation', PoseStamped, queue_size=10)
         self.marker_pub = rospy.Publisher('/human_pose_markers', Marker, queue_size=10)
+        self.camera_info_pub = rospy.Publisher('/realsense/color/camera_info', CameraInfo, queue_size=10)
 
         self.bridge = CvBridge()
         self.model = YOLO("models/yolo11n-pose.pt")
@@ -33,6 +35,20 @@ class VisionPoseAprilTag:
         self.depth_scale = profile.get_device().first_depth_sensor().get_depth_scale()
         self.intrinsics = profile.get_stream(rs.stream.depth).as_video_stream_profile().get_intrinsics()
         self.align = rs.align(rs.stream.color)
+
+        # Get color camera intrinsics and map to CameraInfo message
+        color_profile = profile.get_stream(rs.stream.color)
+        color_intrinsics = color_profile.as_video_stream_profile().get_intrinsics()
+        
+        self.camera_info_msg = CameraInfo()
+        self.camera_info_msg.width = color_intrinsics.width
+        self.camera_info_msg.height = color_intrinsics.height
+        self.camera_info_msg.K = [color_intrinsics.fx, 0, color_intrinsics.ppx, 0, color_intrinsics.fy, color_intrinsics.ppy, 0, 0, 1]
+        self.camera_info_msg.P = [color_intrinsics.fx, 0, color_intrinsics.ppx, 0, 0, color_intrinsics.fy, color_intrinsics.ppy, 0, 0, 0, 1, 0]
+        self.camera_info_msg.D = [0, 0, 0, 0, 0]  # Assuming no distortion
+        self.camera_info_msg.distortion_model = "plumb_bob"
+        self.camera_info_msg.header = Header()
+        self.camera_info_msg.header.frame_id = "realsense_link"
 
         # Initialize TF Broadcaster
         self.tf_broadcaster = tf.TransformBroadcaster()
@@ -51,7 +67,7 @@ class VisionPoseAprilTag:
         tags = self.at_detector.detect(
             gray, estimate_tag_pose=True,
             camera_params=[self.intrinsics.fx, self.intrinsics.fy, self.intrinsics.ppx, self.intrinsics.ppy],
-            tag_size=0.162
+            tag_size=0.14
         )
         for tag in tags:
             self.publish_apriltag_tf(tag)  # Broadcast the TF for each tag
@@ -70,18 +86,36 @@ class VisionPoseAprilTag:
         T = np.eye(4)
         T[:3, :3] = rotation
         T[:3, 3] = translation
+        print(T)
 
         # Convert to quaternion
         quaternion = tf.transformations.quaternion_from_matrix(T)
 
-        # Broadcast TF
+        inverse_tf = t.inverse_matrix(T)
+        print(inverse_tf)
+
+        # Broadcast Inverse TF
+        inverse_translation = t.translation_from_matrix(inverse_tf)
+        inverse_quaternion = t.quaternion_from_matrix(inverse_tf)
+
+        inverse_translation = -1 * inverse_translation
+
         self.tf_broadcaster.sendTransform(
-            translation,
-            quaternion,
+            inverse_translation,
+            inverse_quaternion,
             rospy.Time.now(),
-            f"apriltag_{tag.tag_id}",
-            "camera_link"
+            "realsense_link",
+            f"apriltag_{tag.tag_id}"
         )
+        
+        # Broadcast TF
+        # self.tf_broadcaster.sendTransform(
+            # translation,
+            # quaternion,
+            # rospy.Time.now(),
+            # "realsense_link",
+            # f"apriltag_{tag.tag_id}"
+        # )
 
     def detect_pose(self, color_image, depth_image):
         results = self.model(color_image, stream=True)
@@ -100,10 +134,11 @@ class VisionPoseAprilTag:
                     points_3d.append((x3d, y3d, z3d))
                     cv2.circle(color_image, (x, y), 3, (255, 0, 0), -1)
         self.publish_joint_markers(points_3d)
+        self.publish_joint_tfs(points_3d)
 
     def publish_joint_markers(self, points_3d):
         marker = Marker()
-        marker.header.frame_id = "camera_link"
+        marker.header.frame_id = "realsense_link"
         marker.header.stamp = rospy.Time.now()
         marker.ns = "human_pose"
         marker.id = 0
@@ -123,9 +158,29 @@ class VisionPoseAprilTag:
 
         self.marker_pub.publish(marker)
 
+    def publish_joint_tfs(self, points_3d):
+        for idx, point in enumerate(points_3d):
+            if point != (0, 0, 0):
+                translation = point
+                quaternion = [0, 0, 0, 1]
+                self.tf_broadcaster.sendTransform(
+                    translation,
+                    quaternion,
+                    rospy.Time.now(),
+                    "realsense_link",
+                    f"joint_{idx}"
+                )
+
     def publish_image(self, image):
         image_msg = self.bridge.cv2_to_imgmsg(image, encoding="bgr8")
+        stamp = rospy.Time.now()
+        image_msg.header.stamp = stamp
+        image_msg.header.frame_id = "realsense_link"
         self.image_pub.publish(image_msg)
+
+        self.camera_info_msg.header.stamp = stamp
+        self.camera_info_pub.publish(self.camera_info_msg)
+
 
     def run(self):
         try:
@@ -133,7 +188,7 @@ class VisionPoseAprilTag:
                 color_image, depth_image = self.get_aligned_frames()
                 if color_image is None or depth_image is None:
                     continue
-                self.detect_apriltags(color_image)
+                # self.detect_apriltags(color_image)
                 self.detect_pose(color_image, depth_image)
 
                 cv2.imshow("RealSense: Pose and AprilTags", color_image)
