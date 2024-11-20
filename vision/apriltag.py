@@ -13,10 +13,28 @@ class AprilTagProcessor:
     # initialize ros parameters as apriltag_tf_processor and buffer for tf2 transform
     def __init__(self):
         rospy.init_node("apriltag_tf_processor", anonymous=True)
+
+        self.arm_apriltag_name = "apriltag_arm"
+        self.realsense_apriltag_name = "apriltag_realsense"
+
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
         self.broadcaster = tf2_ros.TransformBroadcaster()
         self.static_broadcaster = tf2_ros.StaticTransformBroadcaster()
+
+        # Create a timer that calls the callback function every second
+        self.get_transforms()
+        self.timer = rospy.Timer(rospy.Duration(1.0), self.timer_callback)
+
+    def get_transforms(self):
+        self.base_link_to_realsense_tf = self.tf_buffer.lookup_transform('base_link', 'realsense_link', rospy.Time(0))
+
+    def timer_callback(self, event):
+        """
+        Timer callback function to align AprilTag frames and broadcast Realsense Depth Camera transform
+        """
+        self.base_link_to_realsense_tf.header.stamp = rospy.Time.now()
+        self.broadcaster.sendTransform(self.base_link_to_realsense_tf)
 
 
     def align_apriltag_frames(self):
