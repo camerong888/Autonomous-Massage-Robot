@@ -170,8 +170,8 @@ class VisionPoseAprilTag:
                     translation,
                     quaternion,
                     rospy.Time.now(),
-                    "realsense_link",
-                    f"joint_{idx}"
+                    f"joint_{idx}",
+                    "realsense_link"
                 )
 
     def publish_image(self, image):
