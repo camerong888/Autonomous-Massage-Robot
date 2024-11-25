@@ -16,7 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib
   trajectory_msgs
   control_msgs
-  gen3_compliant_controllers
+  # gen3_compliant_controllers
   moveit_commander
   moveit_msgs
 )
