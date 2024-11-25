@@ -1,21 +1,11 @@
 <!-- test_controller.launch -->
 
 <launch>
-    <!-- Load controller parameters -->
-    <rosparam command="load" file="$(find gen3_compliant_controllers)/config/gen3_7dof_compliant_controllers.yaml"/>
 
-    <!-- Start the controller manager -->
-    <node name="controller_manager" pkg="controller_manager" type="controller_manager" respawn="false" output="screen">
-        <rosparam command="load" file="$(find gen3_compliant_controllers)/config/gen3_7dof_compliant_controllers.yaml"/>
-    </node>
+    <!-- Robot namespace -->
+    <arg name="robot_name" default="my_gen3"/>
+    <arg name="start_delay_seconds" default="0"/>
 
-    <!-- Start the task space compliant controller -->
-    <node name="controller_spawner" pkg="controller_manager" type="spawner" args="task_space_compliant_controller" output="screen" />
-
-    <!-- Start MoveIt! move_group node -->
-    <include file="$(find your_moveit_config_package)/launch/move_group.launch" />
-
-    <!-- Start your arm_controller node -->
-    <node name="arm_controller" pkg="control" type="moveit_example_with_impedance_control.py" output="screen"/>
-
+    <!-- Launch the example in that namespace -->
+    <node name="arm_controller" pkg="control" type="arm_controller.py" ns="$(arg robot_name)" output="screen" launch-prefix="bash -c 'sleep $(arg start_delay_seconds); $0 $@' "/>
 </launch>
